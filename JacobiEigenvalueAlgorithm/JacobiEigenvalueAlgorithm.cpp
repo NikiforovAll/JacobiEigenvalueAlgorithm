@@ -3,12 +3,13 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/progress.hpp>
+#include "boost/format.hpp"
 #include <omp.h>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <list>
-#include <boost/progress.hpp>
 using namespace std;
 using namespace boost::numeric::ublas;
 using namespace boost;
@@ -30,7 +31,7 @@ void abs(matrix<double> &M)
 	}
 }
 
-// finding pivot 
+// finding pivot (off diagonal element)
 void findMax(matrix<double> &M, int &row, int &col)
 {
 	double m = M(0, 0);
@@ -77,7 +78,7 @@ void rotateRowCol(matrix<double> &S, matrix<double> &U, int row, int col)
 }
 
 
-int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter )
+int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter)
 {
 	iter = 0;
 	int col, row;
@@ -93,6 +94,7 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 	{
 		iter++;
 		M = S;
+		cout << "inner ITER" << S << endl;;
 		abs(M);
 		for (int k = 0; k < n; k++)
 		{
@@ -106,6 +108,8 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 		}
 		double Smax = S(row, col);
 		rotateRowCol(S, U, row, col);
+		
+
 		if (Smax < _EPS * norm_frobenius(S)) iterating = false;
 	}
 
@@ -116,9 +120,9 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 
 
 
-matrix<double>* readFromSample(int num) {
+matrix<double>* readFromSample(int num, string filename) {
 	string line;
-	ifstream myfile("sample.txt");
+	ifstream myfile(filename);
 	int count = 0;
 	string matrixStr;
 	matrix<double>* result;
@@ -194,7 +198,10 @@ matrix<double>* readFromSample(int num) {
 	else cout << "Unable to open file";
 	return result;
 }
-
+void writeToAllStreams(string str, ofstream stream[1]) {
+	cout << str << endl;
+	stream[0] << str << endl;
+}
 int main(int argc, char **argv)
 {
 	/*int test(999);
@@ -206,24 +213,24 @@ int main(int argc, char **argv)
 		std::cout << "test = " << test << std::endl;
 	}
 	getchar();*/
-	int const numberOfMatrix = 2;
-
-	matrix<double>*MatrixArray = readFromSample(numberOfMatrix);
+	int const numberOfMatrix = 3;
+	ofstream fp_outs[1];
+	fp_outs[0].open("output.txt", ios::out);
+	matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
 	for (int i = 0; i < numberOfMatrix; i++)
 	{
 		boost::timer t;
-		int iter; 
-		std::cout << "============================" << std::endl;
+		int iter;
+		writeToAllStreams("============================", fp_outs);
 		matrix<double> M = MatrixArray[i];
-		std::cout << "A" << i << std::endl << M << std::endl;
+		writeToAllStreams((boost::format("A%1%: \n %2%") % i %M).str(), fp_outs);
 		matrix<double> U(M.size1(), M.size2());
 		boost::numeric::ublas::vector<double> e(M.size1());
 		jacobiSync(M, e, U, iter);
-		std::cout << "Eigenvalues: " << std::endl << e << std::endl;
-		std::cout << "U: " << std::endl << U << std::endl;
-		std::cout << "Iter: " << std::endl << iter << std::endl;
-		std::cout << "Elapsed: "<< std::fixed  << t.elapsed() << std::endl;
+		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
+										 % e %U%iter%t.elapsed()).str(), fp_outs);
+		
 	}
-	//TBD: output to file ; async solution ; higher precision timer ; 
+	//TBD: async solution ; higher precision timer 
 	return EXIT_SUCCESS;
 }
