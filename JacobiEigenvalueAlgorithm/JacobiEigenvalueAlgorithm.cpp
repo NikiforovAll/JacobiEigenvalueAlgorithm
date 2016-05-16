@@ -16,8 +16,88 @@ using namespace boost::numeric::ublas;
 using namespace boost;
 
 
-#define _EPS 10e-08
+#define _EPS 10e-06
 
+matrix<double>* readFromSample(int num, string filename) {
+	string line;
+	ifstream myfile(filename);
+	int count = 0;
+	string matrixStr;
+	matrix<double>* result;
+	result = new (nothrow) matrix<double>[num];
+	bool isMatrix = false;
+	if (myfile.is_open())
+	{
+		while (getline(myfile, line))
+		{
+			if (count < num)
+				if (line == "#") {
+					bool sizeState = true;
+					bool isReadState = false;
+					string sizeStr;
+					string rowStr = "";
+					int size[2];
+					int currIndex[2] = { 0, 0 };
+					for (int i = 1; i < matrixStr.size() - 1; i++) {
+						if (sizeState) {
+							if (matrixStr[i] == ']') {
+								std::istringstream ss(sizeStr);
+								std::string token;
+								int currSize = 0;
+								while (std::getline(ss, token, ',')) {
+									size[currSize] = stoi(token);
+									currSize++;
+								}
+								sizeState = false;
+								result[count] = matrix<double>(size[0], size[1]);
+								i++;
+							}
+							else {
+								sizeStr += matrixStr[i];
+							}
+						}
+						else {
+							if (matrixStr[i] == '(') {
+								isReadState = true;
+								currIndex[1] = 0;
+								continue;
+							}
+							if (isReadState && matrixStr[i] != ')') {
+								rowStr += matrixStr[i];
+							}
+							else if (matrixStr[i] == ')') {
+								std::istringstream ss(rowStr);
+								std::string token;
+								int currSize = 0;
+								while (std::getline(ss, token, ',')) {
+									result[count](currIndex[0], currSize) = stod(token);
+									currSize++;
+								}
+								currIndex[0]++;
+								isReadState = false;
+								rowStr = "";
+								i++;
+							}
+						}
+					}
+					matrixStr = "";
+					count++;
+					if (count > num) {
+						break;
+					}
+				}
+				else {
+					matrixStr += line;
+				}
+
+		}
+		myfile.close();
+
+	}
+	else cout << "Unable to open file";
+	return result;
+}
+// abso
 
 void abs(matrix<double> &M)
 {
@@ -30,6 +110,20 @@ void abs(matrix<double> &M)
 			M(k, i) = abs(M(k, i));
 		}
 	}
+}
+double sumOffDiagonal(matrix<double> &S) {
+	double sum = 0;
+	for (int i = 0; i < S.size1(); i++) {
+		for (int j = i+1; j < S.size2() - 1; j++)
+		{
+			sum += S(i, j);
+		}
+	}
+	return sum;
+}
+void writeToAllStreams(string str, ofstream stream[1]) {
+	cout << str << endl;
+	stream[0] << str << endl;
 }
 
 // finding pivot (off diagonal element)
@@ -90,12 +184,11 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 		return -1;
 	}
 	matrix<double> M(n, n);
+	e = zero_vector<double>(n);
 	U = identity_matrix<double>(n, n);
 	while (iterating)
 	{
-		iter++;
 		M = S;
-		
 		abs(M);
 		for (int k = 0; k < n; k++)
 		{
@@ -107,11 +200,11 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 			for (int i = 0; i < n; i++) e(i) = S(i, i);
 			return 0;
 		}
+		iter++;
 		double Smax = S(row, col);
 		rotateRowCol(S, U, row, col);
-		
-
-		if (Smax < _EPS * norm_frobenius(S)) iterating = false;
+		//if (Smax < _EPS * norm_frobenius(S)) iterating = false;
+		if (sumOffDiagonal(S) < _EPS) iterating = false;
 	}
 
 	for (int i = 0; i < n; i++) e(i) = S(i, i);
@@ -120,92 +213,85 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 }
 
 
-
-matrix<double>* readFromSample(int num, string filename) {
-	string line;
-	ifstream myfile(filename);
-	int count = 0;
-	string matrixStr;
-	matrix<double>* result;
-	result = new (nothrow) matrix<double>[num];
-	bool isMatrix = false;
-	if (myfile.is_open())
+void generateDisJointPairs(boost::numeric::ublas::vector<double> &top, boost::numeric::ublas::vector<double> &bot) {
+	int sizeTop = top.size();
+	int sizeBot = bot.size();
+	boost::numeric::ublas::vector<double> newTop(sizeTop);
+	boost::numeric::ublas::vector<double> newBot(sizeBot);
+	for (int i = 0; i < sizeTop; i++)
 	{
-		while (getline(myfile, line))
-		{
-			if(count<num)
-			if (line == "#") {
-				bool sizeState = true;
-				bool isReadState = false;
-				string sizeStr;
-				string rowStr = "";
-				int size[2];
-				int currIndex[2] = { 0, 0 };
-				for (int i = 1; i < matrixStr.size() - 1; i++) {
-					if (sizeState) {
-						if (matrixStr[i] == ']') {
-							std::istringstream ss(sizeStr);
-							std::string token;
-							int currSize = 0;
-							while (std::getline(ss, token, ',')) {
-								size[currSize] = stoi(token);
-								currSize++;
-							}
-							sizeState = false;
-							result[count] = matrix<double>(size[0], size[1]);
-							i++;
-						}
-						else {
-							sizeStr += matrixStr[i];
-						}
-					}
-					else {
-						if (matrixStr[i] == '(') {
-							isReadState = true;
-							currIndex[1] = 0;
-							continue;
-						}
-						if (isReadState && matrixStr[i] != ')') {
-							rowStr += matrixStr[i];
-						}
-						else if (matrixStr[i] == ')') {
-							std::istringstream ss(rowStr);
-							std::string token;
-							int currSize = 0;
-							while (std::getline(ss, token, ',')) {
-								result[count](currIndex[0], currSize) = stod(token);
-								currSize++;
-							}
-							currIndex[0]++;
-							isReadState = false;
-							rowStr = "";
-							i++;
-						}
-					}
-				}
-				matrixStr = "";
-				count++;
-				if (count > num) {
-					break;
-				}
-			}
-			else {
-				matrixStr += line;
-			}
-
+		if (i == 0) {
+			newTop(i) = bot(0);
 		}
-		myfile.close();
-
+		else if (i > 0) {
+			newTop(i) = top(i - 1);
+		}
+		if (i == (sizeTop - 1)) {
+			newBot(i) = top(i);
+		}
+		else {
+			newBot(i) = bot(i + 1);
+		}
 	}
-	else cout << "Unable to open file";
-	return result;
+	top = newTop;
+	bot = newBot;
 }
-void writeToAllStreams(string str, ofstream stream[1]) {
-	cout << str << endl;
-	stream[0] << str << endl;
+void generateStartDisJointPair(boost::numeric::ublas::vector<double> &top, boost::numeric::ublas::vector<double> &bot) {
+	for (int i = 0, j = 0; (i + j) < top.size() * 2;) {
+		if ((i + j) % 2 == 0) {
+			bot(i) = (i + 1) * 2;
+			i++;
+		}
+		else {
+			top(j) = 1 + j * 2;
+			j++;
+		}
+	}
+}
+
+
+
+int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
+	iter = 0;
+	int col, row;
+	bool iterating = true;
+	int n = S.size1();
+	if (S.size2() != n)
+	{
+		return -1;
+	}
+	matrix<double> M(n, n);
+	U = identity_matrix<double>(n, n);
+	boost::numeric::ublas::vector<double> top(S.size1() / 2);
+	boost::numeric::ublas::vector<double> bot(S.size2() / 2);
+	generateStartDisJointPair(top, bot);
+	while (iterating)
+	{
+		iter++;
+		//TBD
+		for (int i = 0; i < S.size1() / 2; i++)
+		{
+			row = std::max(top(i), bot(i)) - 1;
+			col = std::min(top(i), bot(i)) - 1;
+		}
+		generateDisJointPairs(top, bot);
+		rotateRowCol(S, U, col, row);
+		//cout << S << endl;
+		//cin.get();
+		if (sumOffDiagonal(S) < _EPS) iterating = false;
+	}
+
+	for (int i = 0; i < n; i++) e(i) = S(i, i);
+
+	return 0;
 }
 int main(int argc, char **argv)
 {
+	int numberOfMatrix = 2;
+	if (argc > 1 && argv) {
+
+		numberOfMatrix = stoi(argv[1]);
+	}
 	/*int test(999);
 
 	omp_set_num_threads(2);
@@ -215,7 +301,6 @@ int main(int argc, char **argv)
 		std::cout << "test = " << test << std::endl;
 	}
 	getchar();*/
-	int const numberOfMatrix = 4;
 	auto begin = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 	ofstream fp_outs[1];
@@ -224,19 +309,31 @@ int main(int argc, char **argv)
 	for (int i = 0; i < numberOfMatrix; i++)
 	{
 		//boost::timer t; t.elapsed()
+
+		writeToAllStreams("============================", fp_outs);
 		begin = std::chrono::high_resolution_clock::now();
 		int iter;
-		writeToAllStreams("============================", fp_outs);
 		matrix<double> M = MatrixArray[i];
 		writeToAllStreams((boost::format("A%1%: \n %2%") % i %M).str(), fp_outs);
+		writeToAllStreams("Sync version", fp_outs);
 		matrix<double> U(M.size1(), M.size2());
 		boost::numeric::ublas::vector<double> e(M.size1());
+
 		jacobiSync(M, e, U, iter);
 		end = std::chrono::high_resolution_clock::now();
 		double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000000.0;
 		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
-										 % e %U%iter%duration).str(), fp_outs);
+			% e %U%iter%duration).str(), fp_outs);
+		writeToAllStreams("Async version", fp_outs);
+		M = MatrixArray[i];
+		begin = std::chrono::high_resolution_clock::now();
+		jacobiAsync(M, e, U, iter);
+		end = std::chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000000.0;
+		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
+			% e %U%iter%duration).str(), fp_outs);
 	}
-	//TBD: async solution ; higher precision timer 
+	cin.get();
+	//TBD: async solution
 	return EXIT_SUCCESS;
 }
