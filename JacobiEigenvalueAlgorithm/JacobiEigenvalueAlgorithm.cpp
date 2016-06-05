@@ -1,5 +1,3 @@
-
-
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -135,7 +133,7 @@ void findMax(matrix<double> &M, int &row, int &col)
 
 	for (int k = 0; k < n; k++)
 	{
-		for (int l = 0; l < n; l++)
+		for (int l = k; l < n; l++)
 		{
 			if (M(k, l) > m)
 			{
@@ -203,6 +201,8 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 		}		
 		double Smax = S(row, col);
 		rotateRowCol(S, U, row, col);
+
+		cout<<row<<" row|col "<<col <<" sum: "<< sumOffDiagonal(S) << endl;
 		//if (Smax < _EPS * norm_frobenius(S)) iterating = false;
 		if (sumOffDiagonal(S) < _EPS) iterating = false;
 	}
@@ -258,13 +258,32 @@ void cycleVector(boost::numeric::ublas::vector<double> &v) {
 	newV(0) = v(v.size()-1);
 	v = newV;
 }
-
+bool checkConjunction(boost::numeric::ublas::vector<double> &v, int i) {
+	int j = i - 1;
+	bool result = (v(i)==0);
+	if(i-1>=0){
+		result = result && (v(i - 1) == 0);
+	}
+	if (i + 1 < v.size() - 1) {
+		result = result && (v(i + 1) == 0);
+	}
+	return result;
+}
+void setConjunction(boost::numeric::ublas::vector<double> &v, int i) {
+	v(i) = 1;
+	if (i - 1 >= 0) {
+		v(i - 1) = 1;
+	}
+	if (i + 1 < v.size() - 1) {
+		v(i + 1) = 1;
+	}
+}
 
 int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
 	iter = 0;
 	int col, row;
 	bool iterating = true;
-	int n = S.size1();
+	const int n = S.size1();
 	if (S.size2() != n)
 	{
 		return -1;
@@ -279,25 +298,56 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 		iter++;
 		//TBD
 
+		boost::numeric::ublas::vector<double> distr_status(n);
+		matrix<double> toProcess(n, 2);
+		int processPointer = 0;
+		
 		for (int j = 0; j < n - 1; j++)
 		{
+			distr_status.clear();
+			toProcess.clear();
+			processPointer = 0;
+			#pragma omp parallel for shared(distr_status, top, bot, S, U, processPointer) private(row,col) //num_threads(2)
+				//#pragma omp parallel for shared(top,bot) private(row,col)
+				for (int i = 0; i < S.size1() / 2; i++)
+				{
+					//cout << "pair" << endl << top << endl << bot << endl;
+					string num_thread_str = "[" +std::to_string(omp_get_thread_num())+ "]";
+					row = std::max(top(i), bot(i)) - 1;
+					col = std::min(top(i), bot(i)) - 1;
+					if (checkConjunction(distr_status, row) && checkConjunction(distr_status, col)) {
+						cout << "d_status" << num_thread_str << distr_status << endl;
+						setConjunction(distr_status, row);
+						setConjunction(distr_status, col);
+						rotateRowCol(S, U, col, row);
+						cout <<num_thread_str<<"operated:" << col << " -col-row- " << row << endl;
+					}
+					else {
+						toProcess(processPointer, 1) = row;
+						toProcess(processPointer, 0) = col;
+						#pragma omp atomic
+						processPointer++;
+						cout << num_thread_str << "not operated:" << col << " -col-row- " << row << endl;
+					}				
 
-			for (int i = 0; i < S.size1() / 2; i++)
-			{
-				//cout << "pair" << endl << top << endl << bot << endl;
-				row = std::max(top(i), bot(i)) - 1;
-				col = std::min(top(i), bot(i)) - 1;
-				rotateRowCol(S, U, col, row);
+				}				
+			
+			//cout << distr_status << endl;
+			//cout << "pair" << endl << top << endl << bot << endl;
+			//cout << "toProcess" << toProcess <<endl;
+			//cout << "barrier point -----------" << endl;
+			for (int i = 0; (toProcess(i, 0) != 0 && (toProcess(i, 1) != 0)); i++) {
+				rotateRowCol(S, U, toProcess(i,0), toProcess(i,1));
 			}
 			generateDisJointPairs(top, bot);
-
+			//cin.get();
 		}
 
-		cout << "pair" << endl << top << endl << bot << endl;
+		//cout << "pair" << endl << top << endl << bot << endl;
 		//cin.get();
 		cycleVector(bot);
 		cout << S << endl;
-
+		cout <<"sumOffDiagonal"<< sumOffDiagonal(S)<<endl;
 		if (sumOffDiagonal(S) < _EPS) iterating = false;
 	}
 
