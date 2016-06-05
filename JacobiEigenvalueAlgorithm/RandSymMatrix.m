@@ -1,14 +1,18 @@
 % function main = main()
-NMain = 3 ;
+NMain = 1 ;
 fid=fopen('GeneratedTestData.txt','wt');
 for k =1 :NMain 
- N = 128; 
+ N = 6; 
  M=rand(N);
  M=0.5*(M+M');
  L=100; %  magnitude
  for n=1:N
-     for n1=1:N
+     for n1=1:N        
         M(n,n1)=L* M(n,n1);
+        if ((n1>n+1) || (n1<n1-1))
+            M(n,n1)=0;
+            M(n1,n)=0;
+        end
      end
  end
 

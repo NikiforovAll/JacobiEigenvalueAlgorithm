@@ -114,9 +114,9 @@ void abs(matrix<double> &M)
 double sumOffDiagonal(matrix<double> &S) {
 	double sum = 0;
 	for (int i = 0; i < S.size1(); i++) {
-		for (int j = i+1; j < S.size2() - 1; j++)
+		for (int j = i + 1; j < S.size2() - 1; j++)
 		{
-			sum += S(i, j);
+			sum += abs(S(i, j));
 		}
 	}
 	return sum;
@@ -190,6 +190,7 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 	{
 		M = S;
 		abs(M);
+		iter++;
 		for (int k = 0; k < n; k++)
 		{
 			M(k, k) = 0;
@@ -199,8 +200,7 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 		{
 			for (int i = 0; i < n; i++) e(i) = S(i, i);
 			return 0;
-		}
-		iter++;
+		}		
 		double Smax = S(row, col);
 		rotateRowCol(S, U, row, col);
 		//if (Smax < _EPS * norm_frobenius(S)) iterating = false;
@@ -236,6 +236,7 @@ void generateDisJointPairs(boost::numeric::ublas::vector<double> &top, boost::nu
 	top = newTop;
 	bot = newBot;
 }
+
 void generateStartDisJointPair(boost::numeric::ublas::vector<double> &top, boost::numeric::ublas::vector<double> &bot) {
 	for (int i = 0, j = 0; (i + j) < top.size() * 2;) {
 		if ((i + j) % 2 == 0) {
@@ -248,7 +249,15 @@ void generateStartDisJointPair(boost::numeric::ublas::vector<double> &top, boost
 		}
 	}
 }
-
+void cycleVector(boost::numeric::ublas::vector<double> &v) {
+	boost::numeric::ublas::vector<double> newV(v.size());
+	//newV(0) = v(v.size - 1);
+	for (int i = 1; i < v.size(); i++) {
+		newV(i) = v(i - 1);
+	}
+	newV(0) = v(v.size()-1);
+	v = newV;
+}
 
 
 int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
@@ -269,15 +278,26 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 	{
 		iter++;
 		//TBD
-		for (int i = 0; i < S.size1() / 2; i++)
+
+		for (int j = 0; j < n - 1; j++)
 		{
-			row = std::max(top(i), bot(i)) - 1;
-			col = std::min(top(i), bot(i)) - 1;
+
+			for (int i = 0; i < S.size1() / 2; i++)
+			{
+				//cout << "pair" << endl << top << endl << bot << endl;
+				row = std::max(top(i), bot(i)) - 1;
+				col = std::min(top(i), bot(i)) - 1;
+				rotateRowCol(S, U, col, row);
+			}
+			generateDisJointPairs(top, bot);
+
 		}
-		generateDisJointPairs(top, bot);
-		rotateRowCol(S, U, col, row);
-		//cout << S << endl;
+
+		cout << "pair" << endl << top << endl << bot << endl;
 		//cin.get();
+		cycleVector(bot);
+		cout << S << endl;
+
 		if (sumOffDiagonal(S) < _EPS) iterating = false;
 	}
 
@@ -285,8 +305,10 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 
 	return 0;
 }
+
 int main(int argc, char **argv)
 {
+	
 	int numberOfMatrix = 2;
 	if (argc > 1 && argv) {
 
@@ -321,7 +343,7 @@ int main(int argc, char **argv)
 
 		jacobiSync(M, e, U, iter);
 		end = std::chrono::high_resolution_clock::now();
-		double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000000.0;
+		double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
 			% e %U%iter%duration).str(), fp_outs);
 		writeToAllStreams("Async version", fp_outs);
@@ -329,7 +351,7 @@ int main(int argc, char **argv)
 		begin = std::chrono::high_resolution_clock::now();
 		jacobiAsync(M, e, U, iter);
 		end = std::chrono::high_resolution_clock::now();
-		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000000.0;
+		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
 			% e %U%iter%duration).str(), fp_outs);
 	}
