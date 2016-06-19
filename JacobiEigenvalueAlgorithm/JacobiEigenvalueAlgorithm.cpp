@@ -14,7 +14,7 @@ using namespace boost::numeric::ublas;
 using namespace boost;
 
 
-#define _EPS 10e-06
+#define _EPS 10e-03
 
 matrix<double>* readFromSample(int num, string filename) {
 	string line;
@@ -170,7 +170,7 @@ void rotateRowCol(matrix<double> &S, matrix<double> &U, int row, int col)
 	U = prod(U, R);
 }
 
-
+//also possible to modify algorithm by changing multiplication to tridiagonal matrix form
 int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter)
 {
 	iter = 0;
@@ -202,7 +202,7 @@ int jacobiSync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matr
 		double Smax = S(row, col);
 		rotateRowCol(S, U, row, col);
 
-		cout<<row<<" row|col "<<col <<" sum: "<< sumOffDiagonal(S) << endl;
+		//cout<<row<<" row|col "<<col <<" sum: "<< sumOffDiagonal(S) << endl;
 		//if (Smax < _EPS * norm_frobenius(S)) iterating = false;
 		if (sumOffDiagonal(S) < _EPS) iterating = false;
 	}
@@ -278,6 +278,98 @@ void setConjunction(boost::numeric::ublas::vector<double> &v, int i) {
 		v(i + 1) = 1;
 	}
 }
+void RotateColRowGivens(matrix<double> &S, int row, int col, int len) {
+	double x, y, t, s, c;
+	int p, q;
+	p = row;
+	q = col;
+	x = S(p, p - 1);
+	y = S(q, p - 1);
+	t = sqrt(x*x + y*y);
+	s = -y / t;
+	c = x / t;
+	S(p, p - 1) = t;
+	S(q, p - 1) = 0;
+	// left multiplication 
+	for (int i = 1; i <= len; i++) {
+		x = S(p, p + i - 1);
+		y = S(q, p + i - 1);
+		S(p, p + i - 1) = c*x - s*y;
+		S(q, p + i - 1) = s*x + c*y;
+	}
+	S(p - 1, p) = t;
+	S(p - 1, q) = 0;
+	// right multiplication 
+	for (int i = 1; i <= len; i++) {
+		x = S(p + i - 1, p);
+		y = S(p + i - 1, q);
+		S(p + i - 1, p) = c*x - s*y;
+		S(p + i - 1, q) = s*x + c*y;
+	}
+	
+}
+int jacobiPseudoAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
+	int n = S.size1();
+	iter = 0;
+	//Jacobi rotation
+	for (int pp = 0; pp < n - 2; pp++) {
+		int p = pp;
+		int q = p + 1;
+		while (abs(S(p, q)) > _EPS*sqrt(S(q, q)*S(q, q) + S(p, p)*(p, p))) {
+			iter++;
+			double tau = (S(q, q) - S(p, p)) / (2 * S(p, q));
+			double c, s, t;
+			if (tau == 0) {
+				c = 1 / sqrt(2);
+				s = c;
+			}else {
+				t = (tau >= 0 ? 1.0 : -1.0)/(abs(tau)+sqrt(1+tau*tau));
+				c = 1.0 / sqrt(1 + t*t);
+				s = t*c;
+			}
+			double x, y;
+			// left multiplication 
+			for (int i = 1; i <=3; i++) {
+				x = S(p, p + i - 1);
+				y = S(q, p + i - 1);
+				S(p, p + i - 1) = c*x - s*y;
+				S(q, p + i - 1) = s*x + c*y;
+			}
+			// right multiplication 
+			for (int i = 1; i <= 3; i++) {
+				x = S(p + i - 1, p);
+				y = S(p + i - 1, q);
+				S(p + i - 1,p) = c*x - s*y;
+				S(p + i - 1,q) = s*x + c*y;
+			}
+			//matrix<double> U(S.size1(), S.size2());
+			//rotateRowCol(S, U, q, p);
+			/*cout << S(p, q)<<endl<<S(q,p)<<endl;
+			cout << S << endl;
+			cout << p <<" p|q "<< q << endl;*/
+			// removing redundant accumulation via Givens rotation
+			for (int p = 1; p < n - 2; p++) {
+				q = p + 1;
+				if (abs(S(q, p - 1)) > _EPS*sqrt(S(q, q)*S(q, q) + S(p, p)*(p, p))) {
+					RotateColRowGivens(S, p, q, 3);
+				}
+			}
+			p = n - 2;
+			q = p+1;
+			//last step
+			if (abs(S(p, q)) > _EPS*sqrt(S(q, q)*S(q, q) + S(p, p)*(p, p))) {
+				RotateColRowGivens(S, p, q, 2);
+			}
+			p = pp;
+			q = p + 1;
+			//cout <<"iter: "<<endl<<S;
+			//cin.get();
+		}
+	}
+	return 0;
+}
+
+
 
 int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
 	iter = 0;
@@ -396,14 +488,24 @@ int main(int argc, char **argv)
 		double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
 			% e %U%iter%duration).str(), fp_outs);
-		writeToAllStreams("Async version", fp_outs);
+		writeToAllStreams("============================", fp_outs);
+		writeToAllStreams("Pseudo Sync version", fp_outs);
+
+		M = MatrixArray[i];
+		begin = std::chrono::high_resolution_clock::now();
+		jacobiPseudoAsync(M, e, U, iter);
+		end = std::chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
+		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
+			% e %U%iter%duration).str(), fp_outs);
+	/*	writeToAllStreams("Async version", fp_outs);
 		M = MatrixArray[i];
 		begin = std::chrono::high_resolution_clock::now();
 		jacobiAsync(M, e, U, iter);
 		end = std::chrono::high_resolution_clock::now();
 		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
-			% e %U%iter%duration).str(), fp_outs);
+			% e %U%iter%duration).str(), fp_outs);*/
 	}
 	cin.get();
 	//TBD: async solution
