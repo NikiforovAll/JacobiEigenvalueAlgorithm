@@ -462,10 +462,12 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 int main(int argc, char **argv)
 {
 
-	int numberOfMatrix = 2;
+	int numberOfMatrix = 3;
+	string isWriteToConsole = "true";
 	if (argc > 1 && argv) {
 
 		numberOfMatrix = stoi(argv[1]);
+		isWriteToConsole = argv[2];
 	}
 	/*int test(999);
 
@@ -484,21 +486,14 @@ int main(int argc, char **argv)
 	for (int i = 0; i < numberOfMatrix; i++)
 	{
 		//boost::timer t; t.elapsed()
-
-		writeToAllStreams("============================", fp_outs);
-		begin = std::chrono::high_resolution_clock::now();
 		int iter;
 		matrix<double> M = MatrixArray[i];
-		writeToAllStreams((boost::format("A%1%: \n %2%") % i %M).str(), fp_outs);
-		writeToAllStreams("Sync version", fp_outs);
+		if (isWriteToConsole == "true") {
+			writeToAllStreams((boost::format("A%1%: \n %2%") % i %M).str(), fp_outs);
+		}
 		matrix<double> U(M.size1(), M.size2());
 		boost::numeric::ublas::vector<double> e(M.size1());
-
-		jacobiSync(M, e, U, iter, false);
-		end = std::chrono::high_resolution_clock::now();
-		double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
-		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
-			% e %U%iter%duration).str(), fp_outs);
+		double duration = 0;
 		writeToAllStreams("============================", fp_outs);
 		writeToAllStreams("Pseudo Sync version", fp_outs);
 
@@ -507,8 +502,27 @@ int main(int argc, char **argv)
 		jacobiPseudoAsync(M, e, U, iter);
 		end = std::chrono::high_resolution_clock::now();
 		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
-		writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
-			% e %U%iter%duration).str(), fp_outs);
+		if (isWriteToConsole == "true") {
+			writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
+				% e %U%iter%duration).str(), fp_outs);
+		}
+		else {
+			writeToAllStreams("Elapsed " + std::to_string(duration), fp_outs);
+		}
+		writeToAllStreams("============================", fp_outs);
+		begin = std::chrono::high_resolution_clock::now();
+		writeToAllStreams("Sync version", fp_outs);
+		jacobiSync(M, e, U, iter, false);
+		end = std::chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
+		if (isWriteToConsole == "true") {
+			writeToAllStreams((boost::format("Eigenvalues: %1% \n U: %2% \nIter %3%\n Elapsed: %4%")
+				% e %U%iter%duration).str(), fp_outs);
+		}
+		else {
+			writeToAllStreams("Elapsed " + std::to_string(duration), fp_outs);
+		}
+		
 		/*	writeToAllStreams("Async version", fp_outs);
 			M = MatrixArray[i];
 			begin = std::chrono::high_resolution_clock::now();
