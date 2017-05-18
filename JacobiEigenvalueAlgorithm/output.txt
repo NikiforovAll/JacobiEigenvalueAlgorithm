@@ -1,8 +1,8 @@
-6x6
+16x16
 
 JacobiGivensSyncTest
-Elapsed 0.463264
+Elapsed 3.873600
 ============================
-6x6
 
-JacobiAsyncTest
+
+--------------------------------

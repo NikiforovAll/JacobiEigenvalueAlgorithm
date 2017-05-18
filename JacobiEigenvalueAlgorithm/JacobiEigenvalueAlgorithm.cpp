@@ -137,11 +137,11 @@ int main(int argc, char **argv)
 	fp_outs[0].open("output.txt", ios::out);
 
 	matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
-	for (int i = 0; i < numberOfMatrix; i++)
+	for (int i = 1; i < 2; i++)
 	{
 		JacobiGivensSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//JacobiSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		JacobiAsyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//JacobiAsyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 
 		writeToAllStreams("\n\n--------------------------------", fp_outs);
 	}
