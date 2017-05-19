@@ -82,7 +82,7 @@ void setConjunction(boost::numeric::ublas::vector<double> &v, int i) {
 }
 
 
-int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, matrix<double>  &U, int &iter) {
+int jacobiAsync(boost::numeric::ublas::matrix<double> &S, boost::numeric::ublas::vector<double> &e, boost::numeric::ublas::matrix<double>  &U, int &iter) {
 	iter = 0;
 	int col, row;
 	bool iterating = true;
@@ -91,8 +91,8 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 	{
 		return -1;
 	}
-	matrix<double> M(n, n);
-	U = identity_matrix<double>(n, n);
+	boost::numeric::ublas::matrix<double> M(n, n);
+	U = boost::numeric::ublas::identity_matrix<double>(n, n);
 	boost::numeric::ublas::vector<double> top(S.size1() / 2);
 	boost::numeric::ublas::vector<double> bot(S.size2() / 2);
 	generateStartDisJointPair(top, bot);
@@ -102,7 +102,7 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 		//TBD
 
 		boost::numeric::ublas::vector<double> distr_status(n);
-		matrix<double> toProcess(n, 2);
+		boost::numeric::ublas::matrix<double> toProcess(n, 2);
 		int processPointer = 0;
 
 		for (int j = 0; j < n - 1; j++)
@@ -115,7 +115,7 @@ int jacobiAsync(matrix<double> &S, boost::numeric::ublas::vector<double> &e, mat
 			for (int i = 0; i < S.size1() / 2; i++)
 			{
 				//cout << "pair" << endl << top << endl << bot << endl;
-				string num_thread_str = "[" + std::to_string(omp_get_thread_num()) + "]";
+				std::string num_thread_str = "[" + std::to_string(omp_get_thread_num()) + "]";
 				row = std::max(top(i), bot(i)) - 1;
 				col = std::min(top(i), bot(i)) - 1;
 				if (checkConjunction(distr_status, row) && checkConjunction(distr_status, col)) {

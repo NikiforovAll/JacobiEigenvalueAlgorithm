@@ -5,19 +5,16 @@
 #include "boost/format.hpp"
 #include <fstream>
 using namespace std;
-using namespace boost::numeric::ublas;
-using namespace boost;
-
 #define _EPS 10e-03
 //format: [size, size]((n1,...,size),(n1,...size)...(n1,...size))
 // number format: ###.###
-matrix<double>* readFromSample(int num, string filename) {
+boost::numeric::ublas::matrix<double>* readFromSample(int num, std::string filename) {
 	string line;
 	ifstream myfile(filename);
 	int count = 0;
 	string matrixStr;
-	matrix<double>* result;
-	result = new (nothrow) matrix<double>[num];
+	boost::numeric::ublas::matrix<double>* result;
+	result = new (nothrow) boost::numeric::ublas::matrix<double>[num];
 	bool isMatrix = false;
 	if (myfile.is_open())
 	{
@@ -42,7 +39,7 @@ matrix<double>* readFromSample(int num, string filename) {
 									currSize++;
 								}
 								sizeState = false;
-								result[count] = matrix<double>(size[0], size[1]);
+								result[count] = boost::numeric::ublas::matrix<double>(size[0], size[1]);
 								i++;
 							}
 							else {
@@ -92,12 +89,12 @@ matrix<double>* readFromSample(int num, string filename) {
 }
 
 //writes to console and specified stream
-void writeToAllStreams(string str, ofstream stream[1]) {
-	cout << str << endl;
-	stream[0] << str << endl;
+void writeToAllStreams(std::string str, std::ofstream stream[1]) {
+	std::cout << str << std::endl;
+	stream[0] << str << std::endl;
 }
 
-void abs(matrix<double> &M)
+void abs(boost::numeric::ublas::matrix<double> &M)
 {
 	int n = M.size1();
 
@@ -111,7 +108,7 @@ void abs(matrix<double> &M)
 }
 
 // zero diagonal matrix expected 
-double sumOffDiagonal(matrix<double> &S) {
+double sumOffDiagonal(boost::numeric::ublas::matrix<double> &S) {
 	double sum = 0;
 	for (int i = 0; i < S.size1(); i++) {
 		for (int j = i + 1; j < S.size2() - 1; j++)
@@ -123,7 +120,7 @@ double sumOffDiagonal(matrix<double> &S) {
 }
 
 // finding pivot (off diagonal element)
-void findMax(matrix<double> &M, int &row, int &col)
+void findMax(boost::numeric::ublas::matrix<double> &M, int &row, int &col)
 {
 	double m = M(0, 0);
 	row = col = 0;

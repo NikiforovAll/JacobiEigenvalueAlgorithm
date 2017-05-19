@@ -1,8 +1,5 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace std;
-using namespace boost::numeric::ublas;
-using namespace boost;
 #include "JacobiEigenvalueAlgorithm.h"
 
 //LOG:
@@ -10,9 +7,9 @@ using namespace boost;
 //   date: [03.05.2017], status : [works] if isOptimized = true, but slow for size(matrix) >= 64
 
 int jacobiSync(
-	matrix<double> &S,
+	boost::numeric::ublas::matrix<double> &S,
 	boost::numeric::ublas::vector<double> &e,
-	matrix<double>  &U,
+	boost::numeric::ublas::matrix<double>  &U,
 	int &iter,
 	bool isOptimized)
 {
@@ -24,9 +21,9 @@ int jacobiSync(
 	{
 		return -1;
 	}
-	matrix<double> M(n, n);
-	e = zero_vector<double>(n);
-	U = identity_matrix<double>(n, n);
+	boost::numeric::ublas::matrix<double> M(n, n);
+	e = boost::numeric::ublas::zero_vector<double>(n);
+	U = boost::numeric::ublas::identity_matrix<double>(n, n);
 	while (iterating)
 	{
 		M = S;

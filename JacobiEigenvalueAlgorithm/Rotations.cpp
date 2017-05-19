@@ -1,13 +1,12 @@
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace std;
-using namespace boost::numeric::ublas;
-using namespace boost;
 #include "JacobiEigenvalueAlgorithm.h"
 
 // simple rotation 
-void rotateRowCol(matrix<double> &S, matrix<double> &U, int row, int col)
+void rotateRowCol(
+	boost::numeric::ublas::matrix<double> &S, 
+	boost::numeric::ublas::matrix<double> &U, int row, int col)
 {
 	double t, c, s, theta;
 	int n = S.size1();
@@ -23,15 +22,15 @@ void rotateRowCol(matrix<double> &S, matrix<double> &U, int row, int col)
 	if (theta < 0) t = -t;
 	c = 1 / sqrt(t*t + 1);
 	s = c*t;
-	matrix<double> R(n, n);
-	R = identity_matrix<double>(n, n);
+	boost::numeric::ublas::matrix<double> R(n, n);
+	R = boost::numeric::ublas::identity_matrix<double>(n, n);
 	R(row, row) = R(col, col) = c; R(row, col) = s; R(col, row) = -s;
 	S = prod(S, trans(R));
 	S = prod(R, S);
 	U = prod(U, R);
 }
 
-void rotateColRowJacobi(matrix<double> &S, int row, int col) {
+void rotateColRowJacobi(boost::numeric::ublas::matrix<double> &S, int row, int col) {
 	int p = col;
 	int q = row;
 	double tau = (S(q, q) - S(p, p)) / (2 * S(p, q));
@@ -64,7 +63,7 @@ void rotateColRowJacobi(matrix<double> &S, int row, int col) {
 	}
 }
 
-void rotateColRowGivens(matrix<double> &S, int row, int col, int len) {
+void rotateColRowGivens(boost::numeric::ublas::matrix<double> &S, int row, int col, int len) {
 	double x, y, t, s, c;
 	int p, q;
 	p = row;

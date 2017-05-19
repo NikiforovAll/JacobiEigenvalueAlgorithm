@@ -1,16 +1,14 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace std;
-using namespace boost::numeric::ublas;
-using namespace boost;
 #include "JacobiEigenvalueAlgorithm.h"
 
 //LOG:
 //date: [03.05.2017] status: [works]
 
 int jacobiPseudoAsync(
-		matrix<double> &S,
-		boost::numeric::ublas::vector<double> &e, matrix<double>  &U,
+		boost::numeric::ublas::matrix<double> &S,
+		boost::numeric::ublas::vector<double> &e, 
+		boost::numeric::ublas::matrix<double>  &U,
 		int &iter
 	) 
 {
