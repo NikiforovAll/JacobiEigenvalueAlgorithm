@@ -5,7 +5,6 @@
 #include "boost/format.hpp"
 #include <fstream>
 using namespace std;
-#define _EPS 10e-03
 //format: [size, size]((n1,...,size),(n1,...size)...(n1,...size))
 // number format: ###.###
 boost::numeric::ublas::matrix<double>* readFromSample(int num, std::string filename) {

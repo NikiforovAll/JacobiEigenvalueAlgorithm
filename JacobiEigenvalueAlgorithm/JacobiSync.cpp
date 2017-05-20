@@ -1,6 +1,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include "JacobiEigenvalueAlgorithm.h"
+#define _EPS 10e-03
 
 //LOG:
 //   date: [03.05.2017], status: [does not work] if isOptimized = true, but rotation works for JacobiGivensSync.cpp

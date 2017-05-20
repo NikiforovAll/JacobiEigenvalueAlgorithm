@@ -2,13 +2,18 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include "JacobiEigenvalueAlgorithm.h"
 
+#define _EPS 10e-04
+
 //LOG:
 //date: [03.05.2017] status: [works]
+//date: [03.05.2017] status: [works, but with bad precision]
+
+
 
 int jacobiPseudoAsync(
 		boost::numeric::ublas::matrix<double> &S,
 		boost::numeric::ublas::vector<double> &e, 
-		boost::numeric::ublas::matrix<double>  &U,
+		boost::numeric::ublas::matrix<double>  &	,
 		int &iter
 	) 
 {
@@ -42,6 +47,10 @@ int jacobiPseudoAsync(
 			//cout <<"iter: "<<endl<<S;
 			//cin.get();
 		}
+	}
+	for (int i = 0; i < S.size1(); i++)
+	{
+		e(i) = S(i, i);
 	}
 	return 0;
 }
