@@ -13,7 +13,7 @@
 int jacobiPseudoAsync(
 		boost::numeric::ublas::matrix<double> &S,
 		boost::numeric::ublas::vector<double> &e, 
-		boost::numeric::ublas::matrix<double>  &	,
+		boost::numeric::ublas::matrix<double>  &U,
 		int &iter
 	) 
 {

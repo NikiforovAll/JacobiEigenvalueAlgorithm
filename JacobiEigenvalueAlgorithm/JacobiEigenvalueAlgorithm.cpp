@@ -99,6 +99,32 @@ void JacobiAsyncTest(boost::numeric::ublas::matrix<double> M, std::string isWrit
 
 }
 
+void jacm2syncTest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i) {
+	int iter;
+	auto begin = std::chrono::high_resolution_clock::now();
+	auto end = std::chrono::high_resolution_clock::now();
+	boost::numeric::ublas::matrix<double> U(M.size1(), M.size2());
+	boost::numeric::ublas::vector<double> e(M.size1());
+	double duration = 0;
+	// BEGIN TEST
+	begin = std::chrono::high_resolution_clock::now();
+	jacm2sync(M, e, U, iter);
+	end = std::chrono::high_resolution_clock::now();
+	// END TEST
+
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
+	std::sort(e.begin(), e.end(), std::less<double>());
+	// INFO
+	if (isWriteToConsole == "true") {
+		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
+
+		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
+			% "jacm2sync"% e%duration%iter).str(), fp_outs);
+
+		writeToAllStreams("============================", fp_outs);
+	}
+}
+
 //SSTEQR (QR/QL based)
 //http://physics.oregonstate.edu/~landaur/nacphy/lapack/routines/ssteqr.html
 void ssteqr_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i) {
@@ -145,8 +171,11 @@ void ssteqr_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 
 		writeToAllStreams("============================", fp_outs);
 	}
+	delete[] diagonal;
+	delete[] offdiagonal;
+	delete[] dummy;
 }
-//SSTEIN (bisection)
+//SSTEBZ (bisection)
 //http://physics.oregonstate.edu/~landaur/nacphy/lapack/routines/sstebz.html
 void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i) {
 	// PREP
@@ -162,7 +191,6 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 	for (int j = 0; j < matrixSize - 1; j++) {
 		offdiagonal[j] = M(j + 1, j);
 	}
-	real* dummy = new real[matrixSize * 2];
 	integer info = 0;
 	real abstol = 0;
 	char c4, c5;
@@ -203,37 +231,41 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
 
 		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
-			% "ssteqr"% eig%duration%iter).str(), fp_outs);
+			% "sstebz"% eig%duration%iter).str(), fp_outs);
 
 		writeToAllStreams("============================", fp_outs);
 	}
-
+	delete[] diagonal, offdiagonal, dummy1, result, iblock, split, workspace, iworkspace;
+	 
 }
 
 int main(int argc, char **argv)
 {
 
 	//TBD: review code for memory overhead
-	int numberOfMatrix = 4;
+	int startIndex = 3;
+	int shift = 1;
+
+	int numberOfMatrix = startIndex + shift;
 	std::string isWriteToConsole = "true";
 	if (argc > 1 && argv) {
 
 		numberOfMatrix = std::stoi(argv[1]);
 		isWriteToConsole = argv[2];
 	}
-
+	
 	std::ofstream fp_outs[1];
 	fp_outs[0].open("output.txt", std::ios::out);
-	
 	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
 	std::cout << "INFO: read completed." << std::endl;
-	int shift = 2;
-	for (int i = shift; i < shift+1; i++)
+
+	for (int i = startIndex; i < startIndex + shift; i++)
 	{
-		JacobiSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//JacobiSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		JacobiGivensSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		sstebz_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		jacm2syncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//sstebz_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//doesn't work 
 		//JacobiAsyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 	}

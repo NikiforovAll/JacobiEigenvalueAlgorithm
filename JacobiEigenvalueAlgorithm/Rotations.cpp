@@ -31,8 +31,8 @@ void rotateRowCol(
 }
 
 void rotateColRowJacobi(boost::numeric::ublas::matrix<double> &S, int row, int col) {
-	int p = col;
 	int q = row;
+	int p = col;
 	double tau = (S(q, q) - S(p, p)) / (2 * S(p, q));
 	double c, s, t;
 	if (tau == 0) {

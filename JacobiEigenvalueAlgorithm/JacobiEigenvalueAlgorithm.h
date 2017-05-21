@@ -11,9 +11,19 @@ boost::numeric::ublas::matrix<double>* readFromSample(int num, std::string filen
 void writeToAllStreams(std::string str, std::ofstream stream[1]);
 void abs(boost::numeric::ublas::matrix<double> &M);
 double sumOffDiagonal(boost::numeric::ublas::matrix<double> &S);
+double summOffDiagonal2(boost::numeric::ublas::matrix<double> &S);
 void findMax(boost::numeric::ublas::matrix<double> &M, int &row, int &col);
+void findMax2(boost::numeric::ublas::matrix<double> &M, int &row, int &col);
+void debugMatrixForm(boost::numeric::ublas::matrix<double> &S);
 
 //Methods
+// jacm2sync
+int jacm2sync(
+	boost::numeric::ublas::matrix<double> &S,
+	boost::numeric::ublas::vector<double> &e,
+	boost::numeric::ublas::matrix<double>  &U,
+	int &iter
+);
 
 //JacobiGivensSync.cpp
 int jacobiPseudoAsync(
@@ -49,4 +59,5 @@ void rotateColRowGivens(
 void rotateRowCol(
 	boost::numeric::ublas::matrix<double> &S, 
 	boost::numeric::ublas::matrix<double> &U, int row, int col);
+
 #define _EPS 10e-03
