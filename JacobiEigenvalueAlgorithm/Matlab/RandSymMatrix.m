@@ -2,7 +2,7 @@
 NMain = 1 ;
 fid=fopen('GeneratedTestData.txt','wt');
 for k =1 :NMain 
- N = 16; 
+ N = 128; 
  M=rand(N);
  M=0.5*(M+M');
  L=100; %  magnitude
