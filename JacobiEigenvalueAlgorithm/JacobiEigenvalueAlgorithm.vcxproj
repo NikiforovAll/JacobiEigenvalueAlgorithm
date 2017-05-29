@@ -151,15 +151,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\parallel-jacobi\trunk\src\parallel_jacobi.cc" />
     <ClCompile Include="JacobiAsync.cpp" />
     <ClCompile Include="JacobiEigenvalueAlgorithm.cpp" />
     <ClCompile Include="JacobiGivensSync.cpp" />
     <ClCompile Include="JacobiIteration1.cpp" />
+    <ClCompile Include="JacobiIteration2.cpp" />
     <ClCompile Include="JacobiSync.cpp" />
+    <ClCompile Include="main1.cpp" />
+    <ClCompile Include="matrix.cc" />
     <ClCompile Include="Rotations.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="matrix.h" />
+    <ClInclude Include="parallel_jacobi.h" />
     <ClInclude Include="JacobiEigenvalueAlgorithm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

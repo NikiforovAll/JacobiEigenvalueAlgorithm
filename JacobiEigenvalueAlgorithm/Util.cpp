@@ -125,7 +125,7 @@ double summOffDiagonal2(boost::numeric::ublas::matrix<double> &S) {
 	for (int i = 0; i < S.size1(); i++) {
 		for (int j = i + 1; j < S.size2(); j++)
 		{
-			sum += pow(abs(S(i, j)),2);
+			sum += abs(S(i, j));
 		}
 	}
 	return sum;

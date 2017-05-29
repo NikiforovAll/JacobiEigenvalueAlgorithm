@@ -36,9 +36,27 @@
     <ClCompile Include="JacobiAsync.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="JacobiIteration2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\parallel-jacobi\trunk\src\parallel_jacobi.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="matrix.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="JacobiEigenvalueAlgorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel_jacobi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

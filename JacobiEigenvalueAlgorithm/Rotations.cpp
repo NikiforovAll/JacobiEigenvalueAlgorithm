@@ -61,6 +61,7 @@ void rotateColRowJacobi(boost::numeric::ublas::matrix<double> &S, int row, int c
 		S(p + i - 1, p) = c*x - s*y;
 		S(p + i - 1, q) = s*x + c*y;
 	}
+	
 }
 
 void rotateColRowGivens(boost::numeric::ublas::matrix<double> &S, int row, int col, int len) {

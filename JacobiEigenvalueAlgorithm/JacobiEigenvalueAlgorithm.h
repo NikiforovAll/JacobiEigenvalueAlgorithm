@@ -16,7 +16,17 @@ void findMax(boost::numeric::ublas::matrix<double> &M, int &row, int &col);
 void findMax2(boost::numeric::ublas::matrix<double> &M, int &row, int &col);
 void debugMatrixForm(boost::numeric::ublas::matrix<double> &S);
 
+
+
 //Methods
+
+int jacm3sync(
+	boost::numeric::ublas::matrix<double> &A,
+	boost::numeric::ublas::vector<double> &D,
+	boost::numeric::ublas::matrix<double>  &V,
+	int &iter
+);
+
 // jacm2sync
 int jacm2sync(
 	boost::numeric::ublas::matrix<double> &S,
