@@ -199,7 +199,6 @@ namespace parallel_jacobi
 		//,timer& root)
 	{
 		typedef matrix::value_type value_type;
-
 		const int n = mat.size();
 		const int m = n / 2;
 
@@ -229,9 +228,9 @@ namespace parallel_jacobi
 				//premult->start();
 				// Pre-multiply mat with each of the non-conflicting Jacobi
 				// rotation matrices in the set concurrently.
-				//#ifdef enable_openmp
-				#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
-				//#endif
+#ifdef enable_openmp
+#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
+#endif
 				for (int k = 0; k<m; ++k) {
 					int p, q;
 					pe.get(k, p, q);
@@ -248,9 +247,9 @@ namespace parallel_jacobi
 				//postmult->start();
 				// Similarly, post-multiply mat with each of the non-conflicting
 				// Jacobi rotation matrices in the set concurrently.
-				//#ifdef enable_openmp
-				#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
-				//#endif
+#ifdef enable_openmp
+#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
+#endif
 				for (int k = 0; k<m; ++k) {
 					int p, q;
 					pe.get(k, p, q);
@@ -274,7 +273,7 @@ namespace parallel_jacobi
 			//convergence->end();
 
 			// Print how near stopping condition is to being satisfied.
-			//sc.print();
+			sc.print();
 		}
 		//root.end();
 

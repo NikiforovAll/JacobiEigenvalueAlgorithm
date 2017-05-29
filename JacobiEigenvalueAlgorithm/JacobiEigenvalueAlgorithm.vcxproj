@@ -161,12 +161,15 @@
     <ClCompile Include="main1.cpp" />
     <ClCompile Include="matrix.cc" />
     <ClCompile Include="Rotations.cpp" />
+    <ClCompile Include="time.cpp" />
+    <ClCompile Include="timer.cc" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="matrix.h" />
     <ClInclude Include="parallel_jacobi.h" />
     <ClInclude Include="JacobiEigenvalueAlgorithm.h" />
+    <ClInclude Include="timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -48,8 +48,8 @@ void make_matrix(matrix& A, float values[]) {
 int main(int argc, char **argv)
 {
 
-	float mat[] = { 4.0f, 6.0f, 6.0f, 8.0f };
-	matrix A(2);
+	float mat[] = { 2.0f, 3.0f, 4.0f, 3.0f, 6.0f, -5.0f, 4.0f, -5.0f, 7.0f };
+	matrix A(3);
 	make_matrix(A, mat);
 	std::vector<float> eigs;
 	find_eigenvalues_parallel_2(&A, eigs);
