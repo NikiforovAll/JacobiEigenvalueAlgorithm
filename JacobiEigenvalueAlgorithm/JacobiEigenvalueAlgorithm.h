@@ -17,7 +17,7 @@ void findMax2(boost::numeric::ublas::matrix<double> &M, int &row, int &col);
 void debugMatrixForm(boost::numeric::ublas::matrix<double> &S);
 
 void ssteqr_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
-
+void stedc_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
 
 //Methods
 

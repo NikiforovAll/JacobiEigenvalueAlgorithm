@@ -21,11 +21,6 @@
 #include <cstdlib>
 #include <cmath>
 
-//
-//#include <stdio.h>
-//#include "f2c.h"
-//#include "clapack.h"
-
 #include "matrix.h"
 #include "parallel_jacobi.h"
 #include "timer.h"
@@ -41,18 +36,15 @@ void init_matrix(matrix** mat, int n)
 {
 	*mat = new matrix(n);
 }
+
+// TEST PART
+
 void find_eigenvalues_parallel_jacob_music(matrix* A, std::vector<float>& eigenvalues, int &iter)
 {
 	double offThreshold = 10e-6;
 	parallel_jacobi::converge_off_threshold sc(offThreshold, *A);
 	parallel_jacobi::music_permutation pe(A->size());
-	/*timer t("run");
-	timer t1;*/
-	//t1.start();
 	parallel_jacobi::run(*A, sc, pe, iter);
-	//t1.end();
-	//print_timing_stats(t1, 3);
-	
 	// Eigenvalues are left on the diagonal
 	for (int i = 0; i<A->actual_size(); ++i)
 		eigenvalues.push_back(A->get(i, i));
@@ -109,9 +101,8 @@ void parallel_jacob_musictest(boost::numeric::ublas::matrix<float> M, std::strin
 
 int main(int argc, char **argv)
 {
-	int startIndex = 0;
-	int shift = 1;
-
+	int startIndex = 1;
+	int shift = 1; // max 0 - 6 - 512
 	int numberOfMatrix = startIndex + shift;
 	std::string isWriteToConsole = "true";
 	if (argc > 1 && argv) {
@@ -121,26 +112,27 @@ int main(int argc, char **argv)
 	}
 
 	std::ofstream fp_outs[1];
-	fp_outs[0].open("output.txt", std::ios::out);
+	std::string prefix = "1";
+	fp_outs[0].open("output"+ prefix + ".txt", std::ios::out);
 	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
 	std::cout << "INFO: read completed." << std::endl;
-
-	std::cout.precision(10);
+	std::cout << "INFO: ";
+	#ifdef omptest
+		std::cout << "\nRunning parallel jacobi on " << omp_get_max_threads()
+			<< " threads.\n";
+	#else
+		std::cout << "\nRunning serial jacobi.\n";
+	#endif
+	omp_set_num_threads(8);
+	std::cout.precision(12);
 	for (int i = startIndex; i < startIndex + shift; i++)
 	{
+		// QR 
 		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		std::cout << "INFO: ";
-		#ifdef omptest
-				std::cout << "\nRunning parallel jacobi on " << omp_get_max_threads()
-					<< " threads.\n";
-		#else
-				std::cout << "\nRunning serial jacobi.\n";
-		#endif
+		// Divide&Conquer
+		stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+
 		parallel_jacob_musictest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 	}
-
-	
-	
-	return 0;
-	
+	return 0;	
 }

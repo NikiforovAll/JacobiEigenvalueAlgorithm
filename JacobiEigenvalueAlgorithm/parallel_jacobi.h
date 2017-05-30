@@ -1,6 +1,6 @@
 #pragma once
 
-#define omptest true
+//#define omptest true
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -250,8 +250,9 @@ namespace parallel_jacobi
 				//postmult->start();
 				// Similarly, post-multiply mat with each of the non-conflicting
 				// Jacobi rotation matrices in the set concurrently.
+				int test = 3;
 #ifdef omptest
-#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
+#pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd) 
 #endif
 				for (int k = 0; k<m; ++k) {
 					int p, q;

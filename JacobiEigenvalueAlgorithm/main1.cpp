@@ -239,6 +239,60 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 
 }
 
+void stedc_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i) {
+	// PREP
+	int iter = 0;
+	auto begin = std::chrono::high_resolution_clock::now();
+	auto end = std::chrono::high_resolution_clock::now();
+	integer currMatrixSize = M.size1();
+	real *diagonal = new real[currMatrixSize];
+	real* offdiagonal = new real[currMatrixSize];
+	for (int j = 0; j < currMatrixSize; j++) {
+		diagonal[j] = M(j, j);
+	}
+	for (int j = 0; j < currMatrixSize - 1; j++) {
+		offdiagonal[j] = M(j + 1, j);
+	}
+	real* dummy = new real[currMatrixSize * 2];
+	integer info = 0;
+	real *workspace = new real[currMatrixSize * 4];
+	integer *iworkspace = new integer[currMatrixSize * 3];
+	char c4;
+	c4 = 'N';
+	// BEGIN TEST
+	begin = std::chrono::high_resolution_clock::now();
+	sstedc_(&c4, &currMatrixSize, diagonal, offdiagonal, dummy, &currMatrixSize,
+		workspace, iworkspace, iworkspace, iworkspace, &info);
+		//offdiagonal, dummy, &currMatrixSize, dummy, &info,);
+
+	end = std::chrono::high_resolution_clock::now();
+	// END TEST
+	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
+	// INFO
+	if (isWriteToConsole == "true") {
+		std::string eig = "[";
+		eig += std::to_string(currMatrixSize);
+		eig += "](";
+		for (int i = 0; i < currMatrixSize - 1; i++)
+		{
+			eig += std::to_string(diagonal[i]);
+			eig += ",";
+		}
+		eig += std::to_string(diagonal[currMatrixSize - 1]);
+		eig += ")";
+
+		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
+
+		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
+			% "stedc" % eig % duration % iter).str(), fp_outs);
+
+		writeToAllStreams("============================", fp_outs);
+	}
+	delete[] diagonal;
+	delete[] offdiagonal;
+	delete[] dummy;
+}
+
 int main2(int argc, char **argv)
 {
 
