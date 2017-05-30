@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include "JacobiEigenvalueAlgorithm.h"
 
 #include <iostream>
 #include <fstream>
@@ -20,41 +21,126 @@
 #include <cstdlib>
 #include <cmath>
 
+//
+//#include <stdio.h>
+//#include "f2c.h"
+//#include "clapack.h"
+
 #include "matrix.h"
-//#include "gaussian_elimination.h"
 #include "parallel_jacobi.h"
+#include "timer.h"
 #include <vector>
 
-static const float epsilon = 1e-1f;
+void make_matrix(matrix& A, boost::numeric::ublas::matrix<float> M) {
+	for (int i = 0; i<A.actual_size(); ++i)
+		for (int j = 0; j<A.actual_size(); ++j)
+			A(i, j) = M(i,j);
+}
 
-void find_eigenvalues_parallel_2(matrix* A, std::vector<float>& eigenvalues)
+void init_matrix(matrix** mat, int n)
 {
-	//timer t("run");
-	parallel_jacobi::converge_off_threshold sc(1e-6, *A);
+	*mat = new matrix(n);
+}
+void find_eigenvalues_parallel_jacob_music(matrix* A, std::vector<float>& eigenvalues, int &iter)
+{
+	double offThreshold = 10e-6;
+	parallel_jacobi::converge_off_threshold sc(offThreshold, *A);
 	parallel_jacobi::music_permutation pe(A->size());
-	parallel_jacobi::run(*A, sc, pe);
-
+	/*timer t("run");
+	timer t1;*/
+	//t1.start();
+	parallel_jacobi::run(*A, sc, pe, iter);
+	//t1.end();
+	//print_timing_stats(t1, 3);
+	
 	// Eigenvalues are left on the diagonal
 	for (int i = 0; i<A->actual_size(); ++i)
 		eigenvalues.push_back(A->get(i, i));
 }
 
-void make_matrix(matrix& A, float values[]) {
-	for (int i = 0; i<A.actual_size(); ++i)
-		for (int j = 0; j<A.actual_size(); ++j)
-			A(i, j) = values[i*A.actual_size() + j];
+void parallel_jacob_musictest(boost::numeric::ublas::matrix<float> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i) {
+	int iter;
+	auto begin = std::chrono::high_resolution_clock::now();
+	auto end = std::chrono::high_resolution_clock::now();
+
+	double duration = 0;
+	matrix* A = 0; 
+	init_matrix(&A, M.size1());
+	make_matrix(*A, M);
+	std::vector<float> e;
+	
+	// BEGIN TEST
+	begin = std::chrono::high_resolution_clock::now();
+	find_eigenvalues_parallel_jacob_music(A, e, iter);
+	end = std::chrono::high_resolution_clock::now();
+	// END TEST
+	std::sort(e.begin(), e.end());
+	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
+	boost::numeric::ublas::vector<float> eigs(M.size1());
+	for (size_t i = 0; i < e.size(); i++)
+	{
+		eigs(i) = e[i];
+	}
+	
+	// INFO
+	if (isWriteToConsole == "true") {
+		std::string eig = "[";
+		eig += std::to_string(M.size1());
+		eig += "](";
+		for (int i = 0; i < M.size1() - 1; i++)
+		{
+			eig += std::to_string(e[i]);
+			eig += ",";
+		}
+		eig += std::to_string(e[M.size1() - 1]);
+		eig += ")";
+
+		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
+
+		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
+			% "parallel_jacob_music"% eig%duration%iter).str(), fp_outs);
+
+		writeToAllStreams("============================", fp_outs);
+	}
 }
+
+
+
 
 int main(int argc, char **argv)
 {
+	int startIndex = 0;
+	int shift = 1;
 
-	float mat[] = { 2.0f, 3.0f, 4.0f, 3.0f, 6.0f, -5.0f, 4.0f, -5.0f, 7.0f };
-	matrix A(3);
-	make_matrix(A, mat);
-	std::vector<float> eigs;
-	find_eigenvalues_parallel_2(&A, eigs);
-	std::cout << A;
-	std::sort(eigs.begin(), eigs.end());
+	int numberOfMatrix = startIndex + shift;
+	std::string isWriteToConsole = "true";
+	if (argc > 1 && argv) {
+
+		numberOfMatrix = std::stoi(argv[1]);
+		isWriteToConsole = argv[2];
+	}
+
+	std::ofstream fp_outs[1];
+	fp_outs[0].open("output.txt", std::ios::out);
+	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
+	std::cout << "INFO: read completed." << std::endl;
+
+	std::cout.precision(10);
+	for (int i = startIndex; i < startIndex + shift; i++)
+	{
+		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		std::cout << "INFO: ";
+		#ifdef omptest
+				std::cout << "\nRunning parallel jacobi on " << omp_get_max_threads()
+					<< " threads.\n";
+		#else
+				std::cout << "\nRunning serial jacobi.\n";
+		#endif
+		parallel_jacob_musictest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+	}
+
+	
+	
 	return 0;
 	
 }

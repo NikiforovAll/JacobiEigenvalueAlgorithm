@@ -1,14 +1,15 @@
 #pragma once
 
+#define omptest true
 #include <vector>
 #include <limits>
 #include <cmath>
-//#ifdef enable_openmp
+#ifdef omptest
 #include <omp.h>
-//#endif
+#endif
 
 #include "matrix.h"
-//#include "timer.h"
+#include "timer.h"
 
 namespace parallel_jacobi
 {
@@ -63,7 +64,8 @@ namespace parallel_jacobi
 			std::cout << "iteration " << i << "/" << imax << ".\n";
 		}
 	};
-
+	
+#undef max;
 	class converge_off_difference {
 		double lastnorm;
 		double lastnorm2;
@@ -127,7 +129,6 @@ namespace parallel_jacobi
 	};
 
 	//==========================================================================
-	// Symmetric Schur decomposition
 	// Source: Algorithm 8.4.1 from Golub/Van Loan p.428
 	//==========================================================================
 	template<typename T>
@@ -172,7 +173,7 @@ namespace parallel_jacobi
 	}
 
 	//==========================================================================
-	// Post-multiply Jacobi rotation matrix
+	// Post-multiply Jacobi rotation matri+x
 	//==========================================================================
 	template<typename T>
 	inline void postmultiply(matrix& mat, const int p, const int q, const T c,
@@ -195,14 +196,16 @@ namespace parallel_jacobi
 	//  the algorithm.
 	//==========================================================================
 	template<class StoppingCriterion, class Permutation>
-	void run(matrix& mat, StoppingCriterion& sc, Permutation& pe)
-		//,timer& root)
+	void run(matrix& mat, StoppingCriterion& sc, Permutation& pe, int &iter)
+		//, timer& root)
 	{
+		//timer root("run");
 		typedef matrix::value_type value_type;
 		const int n = mat.size();
 		const int m = n / 2;
+		iter = 0;
 
-		// Store sine-cosine pairs as recalculating them for post-multiplication
+		// Store sin-cos pairs as recalculating them for post-multiplication
 		// gives different values causing the algorithm to fail.
 		value_type* si = new value_type[m];
 		value_type* co = new value_type[m];
@@ -228,7 +231,7 @@ namespace parallel_jacobi
 				//premult->start();
 				// Pre-multiply mat with each of the non-conflicting Jacobi
 				// rotation matrices in the set concurrently.
-#ifdef enable_openmp
+#ifdef omptest
 #pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
 #endif
 				for (int k = 0; k<m; ++k) {
@@ -247,7 +250,7 @@ namespace parallel_jacobi
 				//postmult->start();
 				// Similarly, post-multiply mat with each of the non-conflicting
 				// Jacobi rotation matrices in the set concurrently.
-#ifdef enable_openmp
+#ifdef omptest
 #pragma omp parallel for default(none) shared(mat, n, si, co, pe, isodd)
 #endif
 				for (int k = 0; k<m; ++k) {
@@ -270,10 +273,11 @@ namespace parallel_jacobi
 
 			//convergence->start();
 			not_converged = sc.not_converged(mat);
+			iter++;
 			//convergence->end();
 
 			// Print how near stopping condition is to being satisfied.
-			sc.print();
+			//sc.print();
 		}
 		//root.end();
 
