@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\parallel-jacobi\trunk\src\parallel_jacobi.cc" />
+    <ClCompile Include="Bisection.cpp" />
     <ClCompile Include="JacobiAsync.cpp" />
     <ClCompile Include="JacobiEigenvalueAlgorithm.cpp" />
     <ClCompile Include="JacobiGivensSync.cpp" />

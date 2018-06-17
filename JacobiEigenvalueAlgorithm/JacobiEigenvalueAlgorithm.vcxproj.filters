@@ -54,6 +54,9 @@
     <ClCompile Include="time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bisection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="JacobiEigenvalueAlgorithm.h">

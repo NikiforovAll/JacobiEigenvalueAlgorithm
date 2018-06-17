@@ -18,8 +18,11 @@ void debugMatrixForm(boost::numeric::ublas::matrix<double> &S);
 
 void ssteqr_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
 void stedc_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
+void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
+
 
 //Methods
+void bisection_test(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
 
 int jacm3sync(
 	boost::numeric::ublas::matrix<double> &A,

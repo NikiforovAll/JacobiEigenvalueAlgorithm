@@ -99,42 +99,71 @@ void parallel_jacob_musictest(boost::numeric::ublas::matrix<float> M, std::strin
 
 
 
+//int main(int argc, char **argv)
+//{
+//	int startIndex = 0;
+//	int shift = 3; // max 0 - 6 - 512
+//	int numberOfMatrix = startIndex + shift;
+//	std::string isWriteToConsole = "true";
+//	if (argc > 1 && argv) {
+//
+//		numberOfMatrix = std::stoi(argv[1]);
+//		isWriteToConsole = argv[2];
+//	}
+//
+//	//omp_set_num_threads(8);
+//
+//	std::ofstream fp_outs[1];
+//	std::string prefix = "1";
+//	fp_outs[0].open("output"+ prefix + ".txt", std::ios::out);
+//	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
+//	std::cout << "INFO: read completed." << std::endl;
+//	std::cout << "INFO: ";
+//	#ifdef omptest
+//		std::cout << "\nRunning parallel jacobi on " << omp_get_max_threads()
+//			<< " threads.\n";
+//	#else
+//		std::cout << "\nRunning serial jacobi.\n";
+//	#endif
+//	omp_set_num_threads(8);
+//	std::cout.precision(12);
+//	for (int i = startIndex; i < startIndex + shift; i++)
+//	{
+//		// QR 
+//		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+//		// Divide&Conquer
+//		stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+//
+//		parallel_jacob_musictest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+//	}
+//	return 0;	
+//}
+
 int main(int argc, char **argv)
 {
-	int startIndex = 0;
-	int shift = 3; // max 0 - 6 - 512
-	int numberOfMatrix = startIndex + shift;
-	std::string isWriteToConsole = "true";
+	int startindex = 0;
+	int shift = 1; // max 0 - 6 - 512
+	int numberofmatrix = startindex + shift;
+	std::string IsWriteToConsole = "true";
 	if (argc > 1 && argv) {
 
-		numberOfMatrix = std::stoi(argv[1]);
-		isWriteToConsole = argv[2];
+		numberofmatrix = std::stoi(argv[1]);
+		IsWriteToConsole = argv[2];
 	}
 
 	//omp_set_num_threads(8);
 
 	std::ofstream fp_outs[1];
-	std::string prefix = "1";
+	std::string prefix = "-bs1";
 	fp_outs[0].open("output"+ prefix + ".txt", std::ios::out);
-	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberOfMatrix, "input.txt");
-	std::cout << "INFO: read completed." << std::endl;
-	std::cout << "INFO: ";
-	#ifdef omptest
-		std::cout << "\nRunning parallel jacobi on " << omp_get_max_threads()
-			<< " threads.\n";
-	#else
-		std::cout << "\nRunning serial jacobi.\n";
-	#endif
-	omp_set_num_threads(8);
+	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberofmatrix, "input.txt");
+	std::cout << "info: read completed." << std::endl;
+	std::cout << "info: ";
 	std::cout.precision(12);
-	for (int i = startIndex; i < startIndex + shift; i++)
+	for (int i = startindex; i < startindex + shift; i++)
 	{
-		// QR 
-		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		// Divide&Conquer
-		stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-
-		parallel_jacob_musictest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		sstebz_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		bisection_test(MatrixArray[i], IsWriteToConsole, fp_outs, i);
 	}
 	return 0;	
 }
