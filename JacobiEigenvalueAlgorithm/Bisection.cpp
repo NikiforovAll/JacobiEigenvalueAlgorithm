@@ -13,9 +13,9 @@
 
 #include <cmath> 
 
-#ifdef omptest
+//#ifdef omptest
 #include <omp.h>
-#endif
+//#endif
 
 #include < stdio.h>
 #include "f2c.h"
@@ -23,13 +23,14 @@
 
 #include <float.h>                 // required for DBL_EPSILON
 
-#define omptest false
+#define omptest true
 
 void classic_bisection(
 	boost::numeric::ublas::vector<real> diagonal,
 	boost::numeric::ublas::vector<real> offdiagonal,
 	boost::numeric::ublas::vector<real> &result);
 void modified_bisection(
+	int nthreads,
 	boost::numeric::ublas::vector<real> diagonal,
 	boost::numeric::ublas::vector<real> offdiagonal,
 	boost::numeric::ublas::vector<real> &eigenvalues);
@@ -40,11 +41,23 @@ void estimate_eigen_interval(
 	real& left_boundary,
 	real& right_boundary
 );
+void compute_group_bisect(
+	boost::numeric::ublas::vector<real> diagonal,
+	boost::numeric::ublas::vector<real> offdiagonal,
+	double left_boundary,
+	double right_boundary,
+	int m1,
+	int m2,
+	int n,
+	double relative_tolerance,
+	boost::numeric::ublas::vector<real> &eigenvalues_result
+);
 int sturm_sequence(real d[], real off[], real x, int n);
 
 //(bisection)
 //http://physics.oregonstate.edu/~landaur/nacphy/lapack/routines/sstebz.html
 void bisection_test(
+	int nthreads,
 	boost::numeric::ublas::matrix<double> M,
 	std::string isWriteToConsole,
 	std::ofstream fp_outs[1],
@@ -68,15 +81,27 @@ void bisection_test(
 	}
 	//real *result = new real[matrixSize];
 
+	/*#ifdef omptest
+		std::cout << "\nRunning parallel.\n";
+	#else
+		std::cout << "\nRunning serial.\n";
+	#endif*/
 	// BEGIN TEST
 	begin = std::chrono::high_resolution_clock::now();
 	//classic_bisection(diagonal, offdiagonal, result);
-	modified_bisection(diagonal, offdiagonal, result);
+	modified_bisection(nthreads, diagonal, offdiagonal, result);
 	end = std::chrono::high_resolution_clock::now();
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
+	//TBD: refactor in common logging method
+	bool writeCSV = true;
 	if (isWriteToConsole == "true") {
+		if (writeCSV) {
+			writeToAllStreams((boost::format("%1%,%2%")
+				% M.size1() % duration).str(), fp_outs);
+			return;
+		}
 		std::string eig = "[";
 		eig += std::to_string(matrixSize);
 		eig += "](";
@@ -87,27 +112,111 @@ void bisection_test(
 		}
 		eig += std::to_string(result[matrixSize - 1]);
 		eig += ")";
-
-		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
-
+		
 		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
-			% "bisection"% eig%duration%iter).str(), fp_outs);
+		% "bisection"% eig%duration%iter).str(), fp_outs);
 
 		writeToAllStreams("============================", fp_outs);
+		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
 	}
 }
 
 
 void modified_bisection(
+	int nthreads,
 	boost::numeric::ublas::vector<real> diagonal,
 	boost::numeric::ublas::vector<real> offdiagonal,
 	boost::numeric::ublas::vector<real> &eigenvalues)
 {
-	real left_boundary;
-	real right_boundary;
-	estimate_eigen_interval(diagonal, offdiagonal, left_boundary, right_boundary);
+	int n = diagonal.size();
+	int i, j, k;
+	double left_boundary;
+	double right_boundary;
+	double relative_tolerance = 10e-06;
+	double epsilon;
+	double x;
+
+	offdiagonal[0] = 0.0;
+	right_boundary = diagonal[n - 1] + fabs(offdiagonal[n - 1]);
+	left_boundary = diagonal[n - 1] - fabs(offdiagonal[n - 1]);
+	for (i = n - 2; i >= 0; i--) {
+		x = fabs(offdiagonal[i]) + fabs(offdiagonal[i + 1]);
+		if ((diagonal[i] + x) > right_boundary) right_boundary = diagonal[i] + x;
+		if ((diagonal[i] - x) < left_boundary) left_boundary = diagonal[i] - x;
+	}
+	//estimate_eigen_interval(diagonal, offdiagonal, left_boundary, right_boundary);
+	epsilon = ((right_boundary + left_boundary) > 0.0) ? left_boundary : right_boundary;
+	epsilon *= DBL_EPSILON;
+	if (relative_tolerance < epsilon) relative_tolerance = epsilon;
+	epsilon = 0.5 * relative_tolerance + 7.0 * epsilon;
+
+	omp_set_num_threads(nthreads);
+	omp_set_dynamic(0);
+	//int threads = omp_get_max_threads();
+	#pragma omp parallel for
+	for (int i = 0; i < nthreads; i++) {
+		std::cout << "threads" << omp_get_num_threads() << std::endl;
+
+		int f = i * (n / nthreads);
+		int l = (i + 1)*(n / nthreads) - 1;
+		compute_group_bisect(diagonal, offdiagonal, left_boundary, right_boundary, f, l, n, relative_tolerance, eigenvalues);
+	}
 
 }
+
+void compute_group_bisect(
+	boost::numeric::ublas::vector<real> diagonal,
+	boost::numeric::ublas::vector<real> offdiagonal,
+	double left_boundary,
+	double right_boundary,
+	int m1,
+	int m2,
+	int n, 
+	double relative_tolerance,
+	boost::numeric::ublas::vector<real> &eigenvalues_result
+)
+{
+	double *lowerbounds;
+	double tolerance;
+	int j;
+	boost::numeric::ublas::vector<real> eigenvalues(eigenvalues_result);
+	lowerbounds = (double*)malloc(n * sizeof(double));
+	double xlower, xupper, xmid;
+	double q;
+	for ( int i = 0; i < n; i++) {
+		eigenvalues[i] = right_boundary;
+		lowerbounds[i] = left_boundary;
+	}
+	xupper = right_boundary;
+	for (int k = m2; k >= m1; k--) {
+		xlower = left_boundary;
+		for (int i = k; i >= 0; i--)
+			if (xlower < lowerbounds[i]) { xlower = lowerbounds[i]; break; }
+
+		if (xupper > eigenvalues[k]) xupper = eigenvalues[k];
+
+		tolerance = 2.0 * DBL_EPSILON * (fabs(xlower) + fabs(xupper)) + relative_tolerance;
+
+		while ((xupper - xlower) > tolerance) {
+			xmid = 0.5 * (xupper + xlower);
+			j = sturm_sequence(&diagonal[0], &offdiagonal[0], xmid, n) - 1;
+			if (j < k) {
+				if (j < 0) { xlower = lowerbounds[0] = xmid; }
+				else {
+					xlower = lowerbounds[j + 1] = xmid;
+					if (eigenvalues[j] > xmid) eigenvalues[j] = xmid;
+				}
+			}
+			else xupper = xmid;
+			tolerance = 2.0 * DBL_EPSILON * (fabs(xlower) + fabs(xupper)) + relative_tolerance;
+		};
+		eigenvalues[k] = 0.5 * (xupper + xlower);
+	}
+	for (int i = m1; i <= m2; i++) {
+		eigenvalues_result[i] = eigenvalues[i];
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // classic_bisection                                                    //
 // "Calculation of the Eigenvalues of a Symmetric Tridiagonal Matrix" by the Method of Bisection" W.Barth, R.S. Martin, J.H. Wilkinson. 
@@ -156,9 +265,7 @@ void classic_bisection(
 	// from smallest to largest. 
 
 	xupper = right_boundary;
-	#ifdef omptest
-	#pragma omp parallel for
-	#endif
+	
 	for (k = n - 1; k >= 0; k--) {
 		xlower = left_boundary;
 		for (i = k; i >= 0; i--)
@@ -182,7 +289,6 @@ void classic_bisection(
 			tolerance = 2.0 * DBL_EPSILON * (fabs(xlower) + fabs(xupper)) + relative_tolerance;
 		};
 		eigenvalues[k] = 0.5 * (xupper + xlower);
-		
 	}
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -246,13 +352,92 @@ static int sturm_sequence(real d[], real off[], real x, int n)
 	return k;
 }
 
-void compute_group_bisect(
-	int p,
-	int q,
-	double left_boundary,
-	double right_boundary,
-	boost::numeric::ublas::vector<real> &result
-)
-{
-
-}
+//void compute_group_bisect(
+//	boost::numeric::ublas::vector<real> diagonal,
+//	boost::numeric::ublas::vector<real> offdiagonal,
+//	int size,
+//	int m1,
+//	int m2,
+//	double epsilon,
+//	boost::numeric::ublas::vector<real> &result,
+//	double &out_epsilon,
+//	int &iter
+//)
+//{
+//	/*boost::numeric::ublas::vector<real> square_offdiagonal(offdiagonal);
+//	std::cout << square_offdiagonal << std::endl;
+//
+//	for (size_t i = 0; i < square_offdiagonal.size(); i++)
+//	{
+//	square_offdiagonal[i] = std::pow(square_offdiagonal[i], 0.5);
+//	}*/
+//	real h, xmin, xmax;
+//	xmin = diagonal[size - 1] - fabs(offdiagonal[size - 1]);
+//	xmax = diagonal[size - 1] + fabs(offdiagonal[size - 1]);
+//
+//	for (size_t i = size - 2; i > 0; i--)
+//	{
+//		h = fabs(offdiagonal[i]) + fabs(offdiagonal[i + 1]);
+//		if (diagonal[i] + h > xmax) {
+//			xmax = diagonal[i] + h;
+//		}
+//		if (diagonal[i] - h < xmin)
+//		{
+//			xmin = diagonal[i] - h;
+//		}
+//	}
+//
+//	out_epsilon = DBL_EPSILON * (xmin + xmax > 0 ? xmax : -xmin);
+//	if (epsilon <= 0) epsilon = out_epsilon;
+//	out_epsilon = 0.5 * epsilon + 7 * out_epsilon;
+//
+//	int a, k;
+//	real q, x1, xu, x0;
+//	boost::numeric::ublas::vector<real> wu(size);
+//	x0 = xmax;
+//	for (size_t i = m1; i <= m2; i++)
+//	{
+//		result[i] = xmax;
+//		wu[i] = xmin;
+//	}
+//
+//	iter = 0;
+//	for (size_t k = m2; k <= m1; k--)
+//	{
+//		xu = xmin;
+//		for (size_t i = k; i <= m1; i--)
+//		{
+//			if (xu < wu[i]) {
+//				xu = wu[i];
+//			}
+//		}
+//
+//		if (x0 > result[k]) {
+//			x0 = result[k];
+//		}
+//
+//		while (x0 - xu > 2 * DBL_EPSILON *(fabs(xu) + fabs(x0) + epsilon))
+//		{
+//			x1 = (xu + x0) / 2;
+//			iter++;
+//			//!
+//			int j = sturm_sequence(&diagonal[0], &offdiagonal[0], x1, size) - 1;
+//			if (j < k)
+//			{
+//				if (j  < m1)
+//				{
+//					xu = wu[m1] = x1;
+//				}
+//				else
+//				{
+//					xu = wu[j + 1] = x1;
+//					if (result[j] > x1) {
+//						result[j] = x1;
+//					}
+//				}
+//			}
+//			x0 = x1;
+//		}
+//		result[k] = (x0 - xu) / 2.0;
+//	}
+//}

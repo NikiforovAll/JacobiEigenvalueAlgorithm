@@ -1,5 +1,5 @@
 #pragma once
-#define omptest true
+#define omptest false
 #include <vector>
 #include <limits>
 #include <cmath>

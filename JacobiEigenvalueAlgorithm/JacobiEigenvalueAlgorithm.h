@@ -22,7 +22,7 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 
 
 //Methods
-void bisection_test(boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
+void bisection_test(int nthreads, boost::numeric::ublas::matrix<double> M, std::string isWriteToConsole, std::ofstream fp_outs[1], int i);
 
 int jacm3sync(
 	boost::numeric::ublas::matrix<double> &A,

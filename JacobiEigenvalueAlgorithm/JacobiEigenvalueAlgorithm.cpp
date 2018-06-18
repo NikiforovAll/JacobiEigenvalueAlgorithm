@@ -141,8 +141,8 @@ void parallel_jacob_musictest(boost::numeric::ublas::matrix<float> M, std::strin
 
 int main(int argc, char **argv)
 {
-	int startindex = 0;
-	int shift = 1; // max 0 - 6 - 512
+	int startindex = 1;
+	int shift = 6; // max 0 - 6 - 512
 	int numberofmatrix = startindex + shift;
 	std::string IsWriteToConsole = "true";
 	if (argc > 1 && argv) {
@@ -154,16 +154,20 @@ int main(int argc, char **argv)
 	//omp_set_num_threads(8);
 
 	std::ofstream fp_outs[1];
-	std::string prefix = "-bs1";
-	fp_outs[0].open("output"+ prefix + ".txt", std::ios::out);
+	int nthreads = 8;
+	std::string filename = "sstebz_lapacktest-e6-th"+ std::to_string(nthreads)+".csv";
+	//std::string filename = "sstebz_lapacktest.csv";
+
+
+	fp_outs[0].open(filename, std::ios::out);
 	boost::numeric::ublas::matrix<double>*MatrixArray = readFromSample(numberofmatrix, "input.txt");
-	std::cout << "info: read completed." << std::endl;
-	std::cout << "info: ";
+	//std::cout << "info: read completed." << std::endl;
+	//std::cout << "info: ";
 	std::cout.precision(12);
 	for (int i = startindex; i < startindex + shift; i++)
 	{
-		sstebz_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
-		bisection_test(MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		//sstebz_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		bisection_test(nthreads, MatrixArray[i], IsWriteToConsole, fp_outs, i);
 	}
 	return 0;	
 }

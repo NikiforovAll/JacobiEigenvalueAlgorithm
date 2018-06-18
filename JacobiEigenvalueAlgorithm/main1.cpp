@@ -216,7 +216,13 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
+	bool writeCSV = true;
 	if (isWriteToConsole == "true") {
+		if (writeCSV) {
+			writeToAllStreams((boost::format("%1%,%2%")
+				% M.size1() % duration).str(), fp_outs);
+			return;
+		}
 		std::string eig = "[";
 		eig += std::to_string(matrixSize);
 		eig += "](";
@@ -230,8 +236,10 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 
 		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
 
-		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
-			% "sstebz"% eig%duration%iter).str(), fp_outs);
+		/*writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
+			% "sstebz"% eig%duration%iter).str(), fp_outs);*/
+		writeToAllStreams((boost::format("Name: %1%\nElapsed(ms): %2% \nSize: %3%")
+			% "bisection"% duration % M.size1()).str(), fp_outs);
 
 		writeToAllStreams("============================", fp_outs);
 	}
