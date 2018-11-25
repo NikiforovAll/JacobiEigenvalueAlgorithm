@@ -150,8 +150,8 @@ void modified_bisection(
 	if (relative_tolerance < epsilon) relative_tolerance = epsilon;
 	epsilon = 0.5 * relative_tolerance + 7.0 * epsilon;
 
-	omp_set_num_threads(nthreads);
-	omp_set_dynamic(0);
+	//omp_set_num_threads(nthreads);
+	//omp_set_dynamic(0);
 	//int threads = omp_get_max_threads();
 	#pragma omp parallel for
 	for (int i = 0; i < nthreads; i++) {

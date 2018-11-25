@@ -79,7 +79,7 @@ int jacm2sync(
 ) {
 	int n = S.size1();
 	iter = 0;
-	omp_set_num_threads(4);
+	//omp_set_num_threads(4);
 
 	int thread_count = omp_get_num_threads();
 	bool iterating = true;

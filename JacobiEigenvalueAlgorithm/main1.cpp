@@ -216,7 +216,7 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
-	bool writeCSV = true;
+	bool writeCSV = false;
 	if (isWriteToConsole == "true") {
 		if (writeCSV) {
 			writeToAllStreams((boost::format("%1%,%2%")
@@ -236,10 +236,10 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 
 		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
 
-		/*writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
-			% "sstebz"% eig%duration%iter).str(), fp_outs);*/
-		writeToAllStreams((boost::format("Name: %1%\nElapsed(ms): %2% \nSize: %3%")
-			% "bisection"% duration % M.size1()).str(), fp_outs);
+		writeToAllStreams((boost::format("Name: %1% \nEigenvalues: %2% \nElapsed(ms): %3% \nIter: %4%")
+			% "sstebz"% eig%duration%iter).str(), fp_outs);
+		/*writeToAllStreams((boost::format("Name: %1%\nElapsed(ms): %2% \nSize: %3%")
+			% "bisection"% duration % M.size1()).str(), fp_outs);*/
 
 		writeToAllStreams("============================", fp_outs);
 	}
@@ -306,7 +306,7 @@ int main2(int argc, char **argv)
 
 	//TBD: review code for memory overhead
 	int startIndex = 1;
-	int shift = 1;
+	int shift = 3;
 
 	int numberOfMatrix = startIndex + shift;
 	std::string isWriteToConsole = "true";
@@ -325,8 +325,9 @@ int main2(int argc, char **argv)
 	{
 		//JacobiSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//JacobiGivensSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		//ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		jacm3syncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//jacm3syncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//sstebz_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//doesn't work 
 		//JacobiAsyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
