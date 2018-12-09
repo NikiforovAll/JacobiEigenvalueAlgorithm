@@ -41,7 +41,7 @@ void init_matrix(matrix** mat, int n)
 
 void find_eigenvalues_parallel_jacob_music(matrix* A, std::vector<float>& eigenvalues, int &iter)
 {
-	double offThreshold = 10e-3;
+	double offThreshold = 10e-5;
 	parallel_jacobi::converge_off_threshold sc(offThreshold, *A);
 	parallel_jacobi::music_permutation pe(A->size());
 	parallel_jacobi::run(*A, sc, pe, iter);
@@ -73,7 +73,12 @@ void parallel_jacob_musictest(boost::numeric::ublas::matrix<float> M, std::strin
 	{
 		eigs(i) = e[i];
 	}
-	
+	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	// INFO
 	if (isWriteToConsole == "true") {
 		std::string eig = "[";
@@ -143,10 +148,10 @@ int main(int argc, char **argv)
 {
 //	int startindex = 2;
 //	int shift = 5; // max 0 - 6 - 512
-	int startindex = 4;
-	int shift = 1;
+	int startindex = 1;
+	int shift = 6;
 	int numberofmatrix = startindex + shift;
-	std::string IsWriteToConsole = "true";
+	std::string IsWriteToConsole = "false";
 	if (argc > 1 && argv) {
 
 		numberofmatrix = std::stoi(argv[1]);
@@ -154,11 +159,18 @@ int main(int argc, char **argv)
 	}
 
 	int nthreads = 8;
-	//omp_set_num_threads(nthreads);
 	omp_set_num_threads(nthreads);
+	//_putenv("OMP_NUM_THREADS=2");
+	//omp_set_num_threads(nthreads);
+	//setenv("OMP_NUM_THREADS", "4", 1);
+
+	
 	std::ofstream fp_outs[1];
 	
-	std::string filename = "output"+ std::to_string(nthreads)+".txt";
+	std::string filename = std::string("output-")
+		.append(std::to_string(nthreads))
+		.append("-bisection_test.csv");
+	// +std::to_string(nthreads) + ".csv";
 	//std::string filename = "sstebz_lapacktest.csv";
 
 
@@ -167,12 +179,15 @@ int main(int argc, char **argv)
 	//std::cout << "info: read completed." << std::endl;
 	//std::cout << "info: ";
 	std::cout.precision(12);
+	std::cout << "num threads: " << omp_get_max_threads() << std::endl;
+
 	for (int i = startindex; i < startindex + shift; i++)
 	{
 		//sstebz_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
-		ssteqr_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
-		stedc_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
-		//bisection_test(nthreads, MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		//ssteqr_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		//stedc_lapacktest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		bisection_test(nthreads, MatrixArray[i], IsWriteToConsole, fp_outs, i);
+		//parallel_jacob_musictest(MatrixArray[i], IsWriteToConsole, fp_outs, i);
 	}
 	return 0;	
 }

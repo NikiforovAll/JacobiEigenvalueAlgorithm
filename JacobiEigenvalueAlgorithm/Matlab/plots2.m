@@ -1,11 +1,11 @@
 x = [16 64 128 256 512 712];
 
 
-bm1 = csvread('.\test-data\bisection_test-e6-th1.csv');
-bm2 = csvread('.\test-data\bisection_test-e6-th2.csv');
-bm4 = csvread('.\test-data\bisection_test-e6-th4.csv');
-bm8 = csvread('.\test-data\bisection_test-e6-th8.csv');
-bm_lp = csvread('.\test-data\sstebz_lapacktest.csv');
+bm1 = csvread('.\test-data\experiment\bisection_test-e6-th1.csv');
+bm2 = csvread('.\test-data\experiment\bisection_test-e6-th2.csv');
+bm4 = csvread('.\test-data\experiment\bisection_test-e6-th4.csv');
+bm8 = csvread('.\test-data\experiment\bisection_test-e6-th8.csv');
+bm_lp = csvread('.\test-data\experiment\sstebz_lapacktest.csv');
 b1 = bm1(:,2);
 b2 = bm2(:,2);
 b4 = bm4(:,2);
@@ -25,7 +25,7 @@ grid on
 xlabel('n');
 ylabel('time elapsed (ms)');
 title('Time elapsed: e-6')
-legend('bisection-p1', 'bisection-p2', 'bisection-p4', 'bisection-p8', 'sstebz-lapack')
+legend('bisection-th1', 'bisection-th2', 'bisection-th4', 'bisection-th8', 'sstebz')
 hold off
 curtick = get(gca, 'YTick');
 set(gca, 'YTickLabel', cellstr(num2str(curtick(:))));

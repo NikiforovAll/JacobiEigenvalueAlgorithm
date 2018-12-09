@@ -134,7 +134,7 @@ namespace parallel_jacobi
 	void symmetric_schur_new(const matrix& A, const unsigned int p,
 		const unsigned int q, T& c, T& s)
 	{
-		const T epsilon = 1e-3;
+		const T epsilon = 1e-5;
 		if (fabs(A(p, q)) > epsilon)
 		{
 			T tau = (A(q, q) - A(p, p)) / (2.0 * A(p, q));

@@ -96,12 +96,13 @@ void bisection_test(
 	// INFO
 	//TBD: refactor in common logging method
 	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	if (isWriteToConsole == "true") {
-		if (writeCSV) {
-			writeToAllStreams((boost::format("%1%,%2%")
-				% M.size1() % duration).str(), fp_outs);
-			return;
-		}
+		
 		std::string eig = "[";
 		eig += std::to_string(matrixSize);
 		eig += "](";
@@ -155,8 +156,7 @@ void modified_bisection(
 	//int threads = omp_get_max_threads();
 	#pragma omp parallel for
 	for (int i = 0; i < nthreads; i++) {
-		std::cout << "threads" << omp_get_num_threads() << std::endl;
-
+		//std::cout << "threads" << omp_get_num_threads() << std::endl;
 		int f = i * (n / nthreads);
 		int l = (i + 1)*(n / nthreads) - 1;
 		compute_group_bisect(diagonal, offdiagonal, left_boundary, right_boundary, f, l, n, relative_tolerance, eigenvalues);

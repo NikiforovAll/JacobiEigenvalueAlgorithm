@@ -115,6 +115,12 @@ void jacm3syncTest(boost::numeric::ublas::matrix<double> M, std::string isWriteT
 	duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	std::sort(e.begin(), e.end(), std::less<double>());
 	// INFO
+	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	if (isWriteToConsole == "true") {
 		writeToAllStreams((boost::format("#%1%: \n") % i).str(), fp_outs);
 
@@ -152,6 +158,12 @@ void ssteqr_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
+	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	if (isWriteToConsole == "true") {
 		std::string eig = "[";
 		eig += std::to_string(currMatrixSize);
@@ -216,13 +228,13 @@ void sstebz_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWr
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
-	bool writeCSV = false;
+	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	if (isWriteToConsole == "true") {
-		if (writeCSV) {
-			writeToAllStreams((boost::format("%1%,%2%")
-				% M.size1() % duration).str(), fp_outs);
-			return;
-		}
 		std::string eig = "[";
 		eig += std::to_string(matrixSize);
 		eig += "](";
@@ -277,6 +289,12 @@ void stedc_lapacktest(boost::numeric::ublas::matrix<double> M, std::string isWri
 	// END TEST
 	double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0;
 	// INFO
+	bool writeCSV = true;
+	if (writeCSV) {
+		writeToAllStreams((boost::format("%1%,%2%")
+			% M.size1() % duration).str(), fp_outs);
+		return;
+	}
 	if (isWriteToConsole == "true") {
 		std::string eig = "[";
 		eig += std::to_string(currMatrixSize);
@@ -325,8 +343,8 @@ int main2(int argc, char **argv)
 	{
 		//JacobiSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//JacobiGivensSyncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
-		stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//ssteqr_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
+		//stedc_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//jacm3syncTest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//sstebz_lapacktest(MatrixArray[i], isWriteToConsole, fp_outs, i);
 		//doesn't work 
